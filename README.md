@@ -27,6 +27,3 @@ A React-based web app functioning as a whiteboard for real-time batch tracking, 
 ## Notes
 - Ensure `.env` is not committed (excluded via `.gitignore`).
 - The app is deployed and accessible via [URL] (replace with actual URL).
-
-## License
-Licensed under the MIT License. See [LICENSE](LICENSE) for details.
