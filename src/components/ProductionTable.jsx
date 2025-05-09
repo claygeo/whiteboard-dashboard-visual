@@ -1,4 +1,9 @@
+import React from 'react';
+
 const ProductionTable = ({ data, currentShift, totals, language }) => {
+  console.log('ProductionTable data prop:', data);
+  console.log('ProductionTable totals prop:', totals);
+
   const labels = {
     Stations: 'Stations',
     Product: 'Product',
@@ -35,7 +40,7 @@ const ProductionTable = ({ data, currentShift, totals, language }) => {
   };
 
   // Dynamically adjust font sizes and padding based on the number of rows
-  const rowCount = data.length + 2; // +2 for header and totals row
+  const rowCount = (data?.length || 0) + 2; // +2 for header and totals row
   const baseHeaderFontSize = 1.75;  // Reduced to 1.75rem
   const baseDataFontSize = 2.25;    // Increased to 2.25rem
   const basePadding = 0.75;         // 0.75rem
@@ -47,7 +52,7 @@ const ProductionTable = ({ data, currentShift, totals, language }) => {
   const padding = Math.max(0.3, basePadding * scaleFactor);               // Minimum 0.3rem
 
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="bg-gray-100">
       <div className="bg-white rounded-lg shadow-md mx-4">
         <table className="w-full">
           <colgroup>
@@ -97,48 +102,56 @@ const ProductionTable = ({ data, currentShift, totals, language }) => {
             </tr>
           </thead>
           <tbody>
-            {data.map((row, index) => (
-              <tr key={row.id} className={`border-b ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 truncate">{row.line}</td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 whitespace-nowrap">{row.product || 'N/A'}</td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center whitespace-nowrap">{row.batch_number || '-'}</td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(row.employee_count || 0)}</td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">
-                  {row.total_labor_hours ? row.total_labor_hours.toFixed(1) : 0}
-                </td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(row.target_units || 0)}</td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(row.actual_units || 0)}</td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`font-bold text-center truncate ${
-                  row.target_percentage > 98 ? 'text-green-500' : 'text-red-500'
-                }`}>
-                  {Math.round(row.target_percentage)}%
-                </td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(Math.round(row.uplb) || 0)}</td>
-                <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`font-bold text-center truncate ${
-                  row.unit_delta >= 0 ? 'text-gray-800' : 'text-red-500'
-                }`}>
-                  {row.unit_delta >= 0 ? formatNumber(row.unit_delta) : `(${formatNumber(Math.abs(row.unit_delta))})`}
+            {data && data.length > 0 ? (
+              data.map((row, index) => (
+                <tr key={row.id || index} className={`border-b ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 truncate">{row.line || 'N/A'}</td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 whitespace-nowrap">{row.product || 'N/A'}</td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center whitespace-nowrap">{row.batch_number || '-'}</td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(row.employee_count || 0)}</td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">
+                    {row.total_labor_hours ? row.total_labor_hours.toFixed(1) : 0}
+                  </td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(row.target_units || 0)}</td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(row.actual_units || 0)}</td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`font-bold text-center truncate ${
+                    row.target_percentage === 0 ? 'text-gray-800' : row.target_percentage > 98 ? 'text-green-500' : 'text-red-500'
+                  }`}>
+                    {Math.round(row.target_percentage || 0)}%
+                  </td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="font-bold text-gray-800 text-center truncate">{formatNumber(Math.round(row.uplh) || 0)}</td>
+                  <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`font-bold text-center truncate ${
+                    row.unit_delta === 0 ? 'text-gray-800' : row.unit_delta > 0 ? 'text-green-500' : 'text-red-500'
+                  }`}>
+                    {row.unit_delta >= 0 ? formatNumber(row.unit_delta || 0) : `(${formatNumber(Math.abs(row.unit_delta) || 0)})`}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="10" className="text-center p-4 text-gray-600">
+                  No data available for this shift
                 </td>
               </tr>
-            ))}
+            )}
             <tr className="bg-gray-300 font-bold">
               <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 truncate">{currentLabels.Totals}</td>
               <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }}></td>
               <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }}></td>
-              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{formatNumber(totals.employee_count)}</td>
-              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{totals.total_labor_hours.toFixed(1)}</td>
-              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{formatNumber(totals.target_units)}</td>
-              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{formatNumber(totals.actual_units)}</td>
-              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`text-gray-800 text-center truncate ${
-                totals.target_percentage > 98 ? 'text-green-500' : 'text-red-500'
+              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{formatNumber(totals.employee_count || 0)}</td>
+              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{totals.total_labor_hours?.toFixed(1) || 0}</td>
+              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{formatNumber(totals.target_units || 0)}</td>
+              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{formatNumber(totals.actual_units || 0)}</td>
+              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`text-center truncate ${
+                totals.target_percentage === 0 ? 'text-gray-800' : totals.target_percentage > 98 ? 'text-green-500' : 'text-red-500'
               }`}>
-                {Math.round(totals.target_percentage)}%
+                {Math.round(totals.target_percentage || 0)}%
               </td>
               <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className="text-gray-800 text-center truncate">{formatNumber(Math.round(totals.uplh) || 0)}</td>
-              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`text-gray-800 text-center truncate ${
-                totals.unit_delta >= 0 ? 'text-gray-800' : 'text-red-500'
+              <td style={{ fontSize: `${dataFontSize}rem`, padding: `${padding}rem`, lineHeight: '1.1' }} className={`text-center truncate ${
+                totals.unit_delta === 0 ? 'text-gray-800' : totals.unit_delta > 0 ? 'text-green-500' : 'text-red-500'
               }`}>
-                {totals.unit_delta >= 0 ? formatNumber(totals.unit_delta) : `(${formatNumber(Math.abs(totals.unit_delta))})`}
+                {totals.unit_delta >= 0 ? formatNumber(totals.unit_delta || 0) : `(${formatNumber(Math.abs(totals.unit_delta) || 0)})`}
               </td>
             </tr>
           </tbody>
