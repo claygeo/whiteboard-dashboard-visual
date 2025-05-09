@@ -40,11 +40,16 @@ const Dashboard = () => {
     timeZone: 'America/New_York',
   }) + ' EST';
 
-  // Demo data for Monthly Goal note
+  // Monthly Goal data
   const lastMonthUnits = 15000; // Example: Actual units produced last month
   const thisMonthGoal = 18000; // Example: Goal for this month
   const currentUnits = totals.actual_units || 0; // Current actual units from totals
   const percentToGoal = thisMonthGoal > 0 ? ((thisMonthGoal - currentUnits) / thisMonthGoal) * 100 : 0;
+
+  // Calculate trend for Monthly Goal note
+  const trendPercentage = ((currentUnits - lastMonthUnits) / lastMonthUnits) * 100;
+  const trendText = trendPercentage >= 0 ? `↑ ${trendPercentage.toFixed(1)}%` : `↓ ${Math.abs(trendPercentage).toFixed(1)}%`;
+  const trendColor = trendPercentage >= 0 ? 'text-green-500' : 'text-red-500';
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -64,9 +69,9 @@ const Dashboard = () => {
       <div className="h-48"></div>
 
       {/* Flex Row for Logo, Chart, and Monthly Goal Note */}
-      <div className="flex flex-col md:flex-row items-start justify-center w-full px-8 mb-6">
-        {/* Curaleaf Logo (Closer to Middle) */}
-        <div className="w-96 h-96 flex-shrink-0 mr-auto ml-24">
+      <div className="flex flex-col md:flex-row items-start justify-between w-full px-8 mb-6">
+        {/* Curaleaf Logo - Moved back to middle left */}
+        <div className="w-[480px] h-[480px] flex-shrink-0 mr-auto ml-24">
           <img
             src={curaleafLogo}
             alt="Curaleaf Logo"
@@ -81,14 +86,15 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Monthly Goal Note (Closer to Middle) */}
+        {/* Monthly Goal Note - Font size adjusted to 3x, kept on the right */}
         <div className="w-[480px] min-h-96 flex-shrink-0 ml-auto mr-24 bg-white p-4 rounded-lg shadow-md">
-          <h4 className="text-xl font-bold text-gray-900 mb-2">Monthly Goal</h4>
+          <h4 className="text-[60px] font-bold text-gray-900 mb-2">Monthly Goal</h4>
           <ul className="list-disc list-inside text-gray-800">
-            <li>Last Month: {lastMonthUnits.toLocaleString()} units</li>
-            <li>This Month Goal: {thisMonthGoal.toLocaleString()} units</li>
-            <li>Current Units: {currentUnits.toLocaleString()} units</li>
-            <li>Percent to Goal: {percentToGoal.toFixed(1)}% remaining</li>
+            <li className="text-[48px]">Last Month: {lastMonthUnits.toLocaleString()} units</li>
+            <li className="text-[48px]">This Month Goal: {thisMonthGoal.toLocaleString()} units</li>
+            <li className="text-[48px]">Current Units: {currentUnits.toLocaleString()} units</li>
+            <li className="text-[48px]">Percent to Goal: {percentToGoal.toFixed(1)}% remaining</li>
+            <li className={`text-[48px] ${trendColor}`}>Trend: {trendText}</li>
           </ul>
         </div>
       </div>
