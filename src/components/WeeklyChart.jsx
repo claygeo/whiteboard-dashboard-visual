@@ -16,7 +16,7 @@ const WeeklyChart = ({ weeklyData }) => {
           <XAxis dataKey="day" tick={{ fontSize: 48 }} />
           <YAxis 
             tick={{ fontSize: 43 }}
-            tickCount={10} // Increased intervals from 8 to 10
+            tickCount={13} // Updated to 13 as previously confirmed
           />
           <Tooltip 
             formatter={(value) => value.toLocaleString()} 
@@ -32,8 +32,8 @@ const WeeklyChart = ({ weeklyData }) => {
               dataKey="actual_units" 
               position="top" 
               offset={10} 
-              style={{ fontSize: 38, fill: '#1f2937' }} // fontSize matches legend, fill is gray-900
-              formatter={(value) => value.toLocaleString()} // Format numbers with commas
+              style={{ fontSize: 38, fill: '#1f2937' }}
+              formatter={(value) => value.toLocaleString()}
             />
           </Bar>
         </BarChart>

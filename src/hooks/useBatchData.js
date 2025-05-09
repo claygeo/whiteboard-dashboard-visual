@@ -20,9 +20,16 @@ export const useBatchData = () => {
   // Helper function to format date as YYYY-MM-DD
   const formatDateToYMD = (date) => {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  };
+
+  // Helper function to get the day of the week from a date string
+  const getDayOfWeek = (dateString) => {
+    const dateParts = dateString.split('-');
+    const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12);
+    return date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' });
   };
 
   const fetchData = async () => {
@@ -30,15 +37,11 @@ export const useBatchData = () => {
     setError(null);
 
     try {
-      // Calculate today's date in EST/EDT (America/New_York timezone)
       const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-      console.log('Raw today date:', today);
-
       const todayStr = formatDateToYMD(today);
 
-      // Calculate date 7 days ago
       const pastDate = new Date(today);
-      pastDate.setDate(today.getDate() - 6); // Last 7 days including today
+      pastDate.setDate(today.getDate() - 6);
       const pastDateStr = formatDateToYMD(pastDate);
 
       console.log('Date range for query:', { pastDateStr, todayStr });
@@ -47,27 +50,51 @@ export const useBatchData = () => {
       setCurrentShift(shift);
 
       // Fetch current shift data for today from batch_data, filtered by shift
-      const { data: batchData, error: batchError } = await supabase
+      const { data: batchDataToday, error: batchErrorToday } = await supabase
         .from('batch_data')
         .select('*, shift, submission_time, effective_date')
         .eq('effective_date', todayStr)
         .eq('shift', shift)
         .order('submission_time', { ascending: false });
 
-      if (batchError) throw batchError;
+      if (batchErrorToday) throw batchErrorToday;
 
-      console.log('Current shift data for', todayStr, 'and shift', shift, ':', batchData);
+      console.log('Current shift data for', todayStr, 'and shift', shift, ':', batchDataToday);
 
-      // Process current shift data with error handling
+      // Combine rows with the same line, batch_number, and effective_date for today's data
+      const groupedDataToday = batchDataToday.reduce((acc, row) => {
+        if (!row.line || !row.batch_number || !row.effective_date) {
+          return acc;
+        }
+        const key = `${row.line}-${row.batch_number}-${row.effective_date}`;
+        if (!acc[key]) {
+          acc[key] = {
+            ...row,
+            employee_count: 0,
+            total_time: 0,
+            target_units: 0,
+            actual_units: 0,
+          };
+        }
+        acc[key].employee_count = Math.max(acc[key].employee_count, row.employee_count || 0);
+        acc[key].total_time += row.total_time || 0;
+        acc[key].target_units += row.target_units || 0;
+        acc[key].actual_units += row.actual_units || 0;
+        return acc;
+      }, {});
+
+      const combinedDataToday = Object.values(groupedDataToday);
+
+      // Process combined data with calculateMetrics
       let processedData = [];
       try {
-        processedData = batchData.map((row, index) => {
+        processedData = combinedDataToday.map((row, index) => {
           try {
             const metrics = calculateMetrics(row);
             return { ...row, ...metrics };
           } catch (err) {
             console.error(`Error in calculateMetrics for row ${index}:`, row, err);
-            return row; // Fallback to row without metrics
+            return row;
           }
         });
       } catch (err) {
@@ -75,7 +102,7 @@ export const useBatchData = () => {
         throw new Error('Failed to process batch data');
       }
 
-      console.log('Processed data:', processedData);
+      console.log('Processed data (combined):', processedData);
 
       setData(processedData);
 
@@ -110,51 +137,50 @@ export const useBatchData = () => {
 
       setTotals(totals);
 
-      // Fetch weekly data from weekly_batch_summary for the last 7 days
-      const { data: weeklySummaryData, error: weeklyError } = await supabase
-        .from('weekly_batch_summary')
-        .select('effective_date, actual_units')
+      // Fetch last 7 days of data from batch_data
+      const { data: weeklyBatchData, error: weeklyBatchError } = await supabase
+        .from('batch_data')
+        .select('line, batch_number, effective_date, actual_units')
         .gte('effective_date', pastDateStr)
         .lte('effective_date', todayStr)
         .order('effective_date', { ascending: true });
 
-      if (weeklyError) throw weeklyError;
+      if (weeklyBatchError) throw weeklyBatchError;
 
-      console.log('Weekly summary data (raw) for', pastDateStr, 'to', todayStr, ':', weeklySummaryData);
+      console.log('Weekly batch data (raw) for', pastDateStr, 'to', todayStr, ':', weeklyBatchData);
 
-      // Fallback: Calculate today's actual_units from batch_data if not in weekly_summary
-      let augmentedWeeklyData = [...weeklySummaryData];
-      const todaySummary = weeklySummaryData.find(d => d.effective_date === todayStr);
-      if (!todaySummary && batchData.length > 0) {
-        const todayActualUnits = batchData.reduce((sum, row) => sum + (row.actual_units || 0), 0);
-        augmentedWeeklyData.push({ effective_date: todayStr, actual_units: todayActualUnits });
-        console.log('Fallback: Added today\'s data from batch_data:', { effective_date: todayStr, actual_units: todayActualUnits });
-      }
+      // Combine rows with the same line, batch_number, and effective_date
+      const dataWithDays = weeklyBatchData.map(row => ({
+        ...row,
+        day: getDayOfWeek(row.effective_date)
+      }));
 
-      // Format weekly data for the chart
-      const weeklyDataFormatted = augmentedWeeklyData.map(item => {
-        console.log('Raw effective_date from Supabase:', item.effective_date);
-
-        // Normalize effective_date
-        const effectiveDate = String(item.effective_date).split('T')[0].trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveDate)) {
-          console.error('Invalid effective_date format:', effectiveDate);
-          return null;
+      const groupedData = dataWithDays.reduce((acc, row) => {
+        if (!row.line || !row.batch_number || !row.effective_date || typeof row.actual_units !== 'number') {
+          return acc;
         }
-        const dateParts = effectiveDate.split('-'); // e.g., ["2025", "05", "08"]
-        const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12); // Noon local time
-        if (isNaN(date.getTime())) {
-          console.error('Invalid date created from effective_date:', effectiveDate);
-          return null;
+        const key = `${row.line}-${row.batch_number}-${row.effective_date}`;
+        if (!acc[key]) {
+          acc[key] = { ...row, actual_units: 0 };
         }
-        return {
-          effective_date: effectiveDate,
-          day: date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' }),
-          actual_units: Number(item.actual_units) || 0,
-        };
-      }).filter(item => item !== null);
+        acc[key].actual_units += row.actual_units;
+        return acc;
+      }, {});
 
-      console.log('Weekly data formatted:', weeklyDataFormatted);
+      const combinedData = Object.values(groupedData);
+
+      console.log('Combined weekly data:', combinedData);
+
+      // Aggregate by day for WeeklyChart
+      const aggregatedData = combinedData.reduce((acc, row) => {
+        const existing = acc.find(item => item.day === row.day);
+        if (existing) {
+          existing.actual_units += row.actual_units;
+        } else {
+          acc.push({ day: row.day, actual_units: row.actual_units, effective_date: row.effective_date });
+        }
+        return acc;
+      }, []);
 
       // Ensure all 7 days are represented, even if no data
       const allDays = [];
@@ -164,20 +190,14 @@ export const useBatchData = () => {
         const dateStr = formatDateToYMD(date);
         const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' });
 
-        console.log('Looking for date:', dateStr);
-
-        const dayData = weeklyDataFormatted.find(d => {
-          const match = d.effective_date === dateStr;
-          console.log('Comparing:', { formattedDate: d.effective_date, dateStr, match });
-          return match;
-        }) || {
+        const dayData = aggregatedData.find(d => d.effective_date === dateStr) || {
           effective_date: dateStr,
           day: dayLabel,
           actual_units: 0,
         };
         allDays[i] = dayData;
       }
-      allDays.reverse(); // Order from oldest to newest
+      allDays.reverse();
 
       console.log('Final weekly data (allDays):', allDays);
 
