@@ -134,10 +134,7 @@ CREATE TABLE weekly_batch_summary (
 ## Visuals
 Below are screenshots showcasing the dashboard's interface and features. (Replace this section with actual image links or filenames once provided.)
 
-Main Dashboard: [Insert image link or filename]
-Weekly Goal Timeline: [Insert image link or filename]
-Shift Leaderboard: [Insert image link or filename]
-Line Cards: [Insert image link or filename]
+Main Dashboard: ![image](https://github.com/user-attachments/assets/91a99249-d142-4f56-9b69-a8533b3fbb52)
 
 ## Notes
 
