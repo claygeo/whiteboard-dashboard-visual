@@ -54,6 +54,7 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 ## Database Setup
 This dashboard relies on the same Supabase database as the Whiteboard Project. To configure the database, copy and paste the following SQL code into the Supabase SQL Editor (found in your Supabase dashboard under SQL Editor). This will set up the required tables.
+
 -- Enable UUID extension (if needed for other tables)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
