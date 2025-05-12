@@ -126,12 +126,6 @@ CREATE TABLE weekly_batch_summary (
     CHECK (actual_units IS NOT NULL)
 );
 
-## Notes:
-
-- Run the SQL code in the order provided to avoid dependency issues.
-- The dashboard primarily uses the batch_data table (filtered by shift and effective_date) and weekly_batch_summary table (for actual_units in the weekly goal timeline).
-- Ensure Row-Level Security (RLS) is configured in Supabase if your application requires it (e.g., enable RLS and set policies via the Supabase dashboard).
-
 ## Visuals
 Below are screenshots showcasing the dashboard's interface and features. (Replace this section with actual image links or filenames once provided.)
 
